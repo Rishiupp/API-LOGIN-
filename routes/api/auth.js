@@ -28,7 +28,9 @@ router.get('/google/callback',
   }
 );
 
-
+router.post('/', (req, res) => {
+  res.status(200).json({ message: 'Post request received!' });
+});
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
