@@ -4,7 +4,7 @@ console.log('lessssgooooooo');
 const { pool } = require('../../dbConfig');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
-
+const jwt = require('jsonwebtoken');
 
 // start Google OAuth flow
 router.get('/google',
@@ -65,23 +65,52 @@ router.post('/register', async (req, res) => {
 });
 
 // POST /api/auth/login
+// router.post('/login', (req, res, next) => {
+//   passport.authenticate('local', (err, user, info) => {
+//     if (err)   return next(err);
+//     if (!user) return res.status(401).json({ error: info.message });
+//     // req.logIn(user, (err) => {
+//     //   if (err) return next(err);
+//     //   // only send back safe info
+//     //   return res.json({ user: { id: user.id, name: user.name, email: user.email } });
+//     // });
+//     const token = jwt.sign(
+//       { id: user.id, name: user.name, email: user.email },
+//       process.env.JWT_SECRET,
+//       { expiresIn: process.env.JWT_EXPIRES_IN }
+//     );
+//   })(req, res, next);
+// });
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
-    if (err)   return next(err);
+    if (err) return next(err);
     if (!user) return res.status(401).json({ error: info.message });
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      // only send back safe info
-      return res.json({ user: { id: user.id, name: user.name, email: user.email } });
+
+    // Create JWT Token
+    const token = jwt.sign(
+      { id: user.id, name: user.name, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    // Respond with token and user info
+    return res.status(200).json({
+      message: "Login successful",
+      token,
+      user: { id: user.id, name: user.name, email: user.email }
     });
+
   })(req, res, next);
 });
 
 // GET /api/auth/me
 router.get('/me', (req, res) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
+  // if (!req.isAuthenticated()) {
+  //   return res.status(401).json({ error: 'Not authenticated' });
+  // }
+  router.get('/me', authenticateJWT, (req, res) => {
+    res.json({ user: req.user });
+  });
   const { id, name, email } = req.user;
   res.json({ user: { id, name, email } });
 });
